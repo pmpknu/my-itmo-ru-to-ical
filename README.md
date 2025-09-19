@@ -1,62 +1,65 @@
-# ITMO schedule to iCalendar converter
+# ITMO Schedule to iCalendar - Simplified Version
 
-Сервис, который ходит на my.itmo.ru за расписанием и экспортирует его как iCalendar с публичной ссылкой. Позволяет автоматически и с автообновлением экспортировать пары в календари Google, iCloud и другие.
+A standalone Python script that fetches your schedule from my.itmo.ru and converts it to an iCalendar (.ics) file that you can import into any calendar application.
 
-## Что нужно
+## Features
 
-Логин и пароль от ИСУ, поэтому безопасности ради захостить себе сервис придётся самостоятельно.
+- ✅ **No Docker required** - just run the Python script
+- ✅ **No web server** - generates .ics file directly
+- ✅ **Simple usage** - one command to get your calendar
+- ✅ **All-in-one file** - entire functionality in `main.py`
+- ✅ **Proper iCalendar format** - works with Google Calendar, Apple Calendar, Outlook, etc.
+- ✅ **Russian language support** - handles Cyrillic characters correctly
+- ✅ **Zoom links included** - adds Zoom URLs to events when available
 
-Нужен **личный** сервер (без доступа у посторонних) с `docker` на нём.
+## Installation
 
-## Как завести
+1. **Clone or download this folder**
 
-1. Подставить username/password в команду и запустить контейнер:
-
+2. **Install Python dependencies:**
    ```bash
-   APP_PORT=35601
-
-   docker run -d \
-      --restart=unless-stopped \
-      --name itmo_ical \
-      -p=$APP_PORT:35601 \
-      -e ITMO_ICAL_ISU_USERNAME=100000 \
-      -e ITMO_ICAL_ISU_PASSWORD=XXXXXXXXXXXXX \
-      ghcr.io/iburakov/my-itmo-ru-to-ical
+   pip install -r requirements.txt
    ```
 
-2. Получить публичную ссылку на .ics:
-
+   Or install manually:
    ```bash
-   URL_PATH=$(docker logs itmo_ical 2>&1 | grep -oh '/calendar/.*')
-   HOST_IP=$(curl -s ipinfo.io/ip)
-
-   echo "http://$HOST_IP:$APP_PORT$URL_PATH"
-
-   # должно выглядеть как-то так:
-   # http://93.184.216.34:35601/calendar/gnKZT88jeuKDdhh7Ow8mwsAbMpIyVKaCBpl2CtqJqYI
+   pip install aiohttp python-dateutil
    ```
 
-3. Если по ссылке скачивается .ics файл, всё работает
-4. Импортировать ссылку в свой календарь. Он будет периодически повторять запрос для получения обновлений - изменяющиеся аудитории теперь не беда ;)
+## Usage
 
-PS. Ссылка содержит хеш имени пользователя и пароля, чтобы она была и неподбираемой для посторонних, и относительно постоянной без использования какого-либо хранилища. Стоит иметь в виду, что меняется username/password - меняется ссылка.
+### Method 1: Interactive (script will ask for credentials)
+```bash
+python main.py
+```
 
-## Дополнительно
+### Method 2: Environment variables
+```bash
+export ITMO_USERNAME="your_itmo_username"
+export ITMO_PASSWORD="your_itmo_password"
+python main.py
+```
 
-⚠ Пароль от ИСУ можно извлечь из контейнера с помощью `docker inspect` / `docker exec`. Безопасность своих ключей - ваша зона ответственности. Убедитесь, что:
+### Method 3: Custom output file
+```bash
+export ITMO_USERNAME="your_itmo_username"
+export ITMO_PASSWORD="your_itmo_password"
+export OUTPUT_FILE="my_schedule.ics"
+python main.py
+```
 
-- к серверу нет доступа у других людей,
-- включен фаервол,
-- отключена SSH авторизация по паролю и root login,
-- и.т.п.
+## What happens when you run the script
 
-Docker образы собираются и пушатся в реестр с помощью GitHub Actions - исходники в этом репозитории, соответствующие скрипты сборки и логи общедоступны. Если всё равно стрёмно доверять пароль рандомному образу, можно склонировать репозиторий и сделать `docker build` из исходников самостоятельно.
+1. **Authentication** - Logs into my.itmo.ru using OAuth2
+2. **Data fetching** - Downloads your personal schedule for the current academic year
+3. **Conversion** - Converts lessons to iCalendar format with:
+   - Lesson type tags (Лек, Прак, Лаб, etc.)
+   - Room and building information
+   - Teacher information
+   - Zoom links (if available)
+   - Proper Moscow time (MSK) timezone
+4. **File creation** - Saves as `itmo_schedule.ics` (or custom filename)
 
-Также из коробки поддерживается мониторинг ошибок с помощью [Sentry](https://sentry.io/). Можно создать проект (Python/Flask) и передать [DSN](https://docs.sentry.io/product/sentry-basics/dsn-explainer/) в переменную окружения `ITMO_ICAL_SENTRY_DSN` при старте контейнера.
+## License
 
-## Как помочь разработке/поддержке
-
-Если какого-то функционала очень не хватает или что-то сломалось, PRs are welcome! Протестить вживую уже не смогу, но стараюсь находить время отсматривать и мержить. Используются:
-
-- Python 3.11 + poetry
-- ruff, black, mypy, vulture в качестве линтеров/форматтеров
+This is a simplified version of the original [my-itmo-ru-to-ical](https://github.com/iburakov/my-itmo-ru-to-ical) project by Ilya Burakov, used under MIT license.
